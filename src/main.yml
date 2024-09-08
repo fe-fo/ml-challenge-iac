@@ -11,8 +11,8 @@
     api_docker_images_list:
       [
         { 
-          name: "nomoreops-app",
-          path: "../../nomoreops-app/",
+          name: "ml-challenge-api",
+          path: "../../ml-challenge-api/",
           tag: "v1.0.0",
           values_files: "../lib/helm/values.yaml"
         }
@@ -45,17 +45,17 @@
       [
         {
           ingress_name: "prometheus",
-          host_name: "www.fede-lab-prometheus.com",
+          host_name: "www.ml-challenge-api-prometheus.com",
           service_name: "metrics-prometheus-server"
         },
         {
           ingress_name: "grafana",
-          host_name: "www.fede-lab-grafana.com",
+          host_name: "www.ml-challenge-api-grafana.com",
           service_name: "grafana"
         },
         {
           ingress_name: "nomoreops-app",
-          host_name: "www.fede-lab-nomoreops-app.com",
+          host_name: "www.ml-challenge-api.com",
           service_name: "nomoreops-app"
         }
       ]
