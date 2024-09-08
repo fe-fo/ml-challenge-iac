@@ -1,0 +1,113 @@
+---
+- hosts: localhost
+  gather_facts: false
+  connection: local
+
+  environment:
+    K8S_AUTH_KUBECONFIG: "./config"
+
+  vars:
+    state: present # absent | present
+    api_docker_images_list:
+      [
+        { 
+          name: "nomoreops-app",
+          path: "../../nomoreops-app/",
+          tag: "v1.0.0",
+          values_files: "../lib/helm/values.yaml"
+        }
+      ]
+    charts_list:
+      [
+        {
+          chart_ref: "prometheus",
+          chart_repo_url: "https://prometheus-community.github.io/helm-charts",
+          release_namespace: "default",
+          release_name: "metrics",
+          values_files: "../lib/k8s/prometheus_values.yml"
+        },
+        {
+          chart_ref: "grafana",
+          chart_repo_url: "https://grafana.github.io/helm-charts",
+          release_namespace: "default",
+          release_name: "grafana",
+          values_files: "../lib/k8s/grafana_values.yml"
+        },
+        {
+          chart_ref: "ingress-nginx",
+          chart_repo_url: "https://kubernetes.github.io/ingress-nginx",
+          release_namespace: "default",
+          release_name: "ingress",
+          values_files: "../lib/k8s/nginx_values.yml"
+        }
+      ]
+    ingresses_list:
+      [
+        {
+          ingress_name: "prometheus",
+          host_name: "www.fede-lab-prometheus.com",
+          service_name: "metrics-prometheus-server"
+        },
+        {
+          ingress_name: "grafana",
+          host_name: "www.fede-lab-grafana.com",
+          service_name: "grafana"
+        },
+        {
+          ingress_name: "nomoreops-app",
+          host_name: "www.fede-lab-nomoreops-app.com",
+          service_name: "nomoreops-app"
+        }
+      ]
+
+  tasks:
+    - name: Build Image
+      community.docker.docker_image:
+        name: "{{ item.name }}"
+        build:
+          path: "{{ item.path }}"
+          nocache: true
+        tag: "{{ item.tag }}"
+        source: build
+      with_items: "{{ api_docker_images_list }}"
+
+    - name: Add Chart Repo
+      kubernetes.core.helm_repository:
+        name: "{{ item.chart_ref }}"
+        repo_url: "{{ item.chart_repo_url }}"
+      with_items: "{{ charts_list }}"
+
+    - name: Deploy Charts
+      kubernetes.core.helm:
+        atomic: yes
+        update_repo_cache: yes
+        wait: yes
+        create_namespace: yes
+        purge: yes
+        chart_ref: "{{ item.chart_ref }}"
+        chart_repo_url: "{{ item.chart_repo_url }}"
+        release_namespace: default
+        release_state: "{{ state }}"
+        release_name: "{{ item.release_name }}"
+        values_files: "{{ item.values_files }}"
+        timeout: 5m0s
+      with_items: "{{ charts_list }}"
+
+    - name: Deploy Nomoreops App
+      kubernetes.core.helm:
+        name: nomoreops-app
+        chart_ref: ../lib/helm/
+        release_namespace: default
+        release_state: "{{ state }}"
+        values_files: "{{ item.values_files }}"
+        values:
+          image:
+            tag: "{{ item.tag }}"
+      with_items: "{{ api_docker_images_list }}"
+
+    - name: Ingresses
+      kubernetes.core.k8s:
+        state: "{{ state }}"
+        template:
+          path: ../lib/k8s/ingress.yml
+      with_items: "{{ ingresses_list }}"
