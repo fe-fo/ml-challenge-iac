@@ -54,9 +54,9 @@
           service_name: "grafana"
         },
         {
-          ingress_name: "nomoreops-app",
+          ingress_name: "api",
           host_name: "www.ml-challenge-api.com",
-          service_name: "nomoreops-app"
+          service_name: "ml-challenge-api"
         }
       ]
 
@@ -66,9 +66,11 @@
         name: "{{ item.name }}"
         build:
           path: "{{ item.path }}"
-          nocache: true
+          nocache: false
         tag: "{{ item.tag }}"
         source: build
+        state: present
+        force_absent: true
       with_items: "{{ api_docker_images_list }}"
 
     - name: Add Chart Repo
@@ -93,9 +95,9 @@
         timeout: 5m0s
       with_items: "{{ charts_list }}"
 
-    - name: Deploy Nomoreops App
+    - name: Deploy API
       kubernetes.core.helm:
-        name: nomoreops-app
+        name: ml-challenge-api
         chart_ref: ../lib/helm/
         release_namespace: default
         release_state: "{{ state }}"

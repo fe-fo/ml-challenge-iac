@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: nomoreops-app
+  repository: ml-challenge-api
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: v1.0.0
