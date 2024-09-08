@@ -13,7 +13,7 @@
         { 
           name: "ml-challenge-api",
           path: "../../ml-challenge-api/",
-          tag: "v1.0.0",
+          tag: "v1.0.1",
           values_files: "../lib/helm/values.yaml"
         }
       ]
@@ -97,6 +97,11 @@
 
     - name: Deploy API
       kubernetes.core.helm:
+        atomic: yes
+        update_repo_cache: yes
+        wait: yes
+        create_namespace: yes
+        purge: yes
         name: ml-challenge-api
         chart_ref: ../lib/helm/
         release_namespace: default
